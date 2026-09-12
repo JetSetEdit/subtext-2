@@ -2,6 +2,7 @@ import Link from "next/link";
 import { runPipeline } from "@/lib/analysis/pipeline";
 import { getCached, setCached } from "@/lib/cache/memory";
 import { ResultStateBadge } from "@/components/ResultStateBadge";
+import { shouldShowAgeGuidance } from "@/lib/result-display";
 import { WarningCard } from "@/components/WarningCard";
 import type { AnalysisMode } from "@/lib/types";
 
@@ -67,7 +68,7 @@ export default async function BookPage({ params, searchParams }: PageProps) {
         </section>
       )}
 
-      {ageGuidance && (
+      {shouldShowAgeGuidance(resultState, ageGuidance) && (
         <section className="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
           <h2 className="font-semibold">Age guidance</h2>
           <p className="mt-1 text-sm">{ageGuidance}</p>

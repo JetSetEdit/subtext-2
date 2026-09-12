@@ -9,19 +9,19 @@ export const RESULT_STATE_CONFIG: Record<
   }
 > = {
   warnings: {
-    label: "Content advisories found",
+    label: "Content warnings found",
     description:
       "We found themes that may matter for your family. Review each advisory below.",
     tone: "caution",
   },
   clear_confident: {
-    label: "No advisories identified",
+    label: "No warnings in our taxonomy",
     description:
-      "Analysis completed with adequate metadata and no content warnings were identified. This is not a guarantee the book contains no sensitive themes.",
+      "We completed analysis on adequate metadata and, with high confidence, found no warnings in our taxonomy. This is not a guarantee the book is risk-free.",
     tone: "neutral",
   },
   low_confidence: {
-    label: "Limited information",
+    label: "Not enough to be sure",
     description:
       "We ran analysis but available metadata was thin or evidence was weak. Do not treat this as an all-clear.",
     tone: "caution",
@@ -29,10 +29,19 @@ export const RESULT_STATE_CONFIG: Record<
   could_not_analyze: {
     label: "Could not analyze",
     description:
-      "Analysis did not complete successfully. We cannot provide guidance for this book right now.",
+      "Analysis did not complete successfully. We cannot provide guidance for this book right now. Nothing here means the book is clear.",
     tone: "error",
   },
 };
+
+/** Age guidance is shown only when analysis reached a trustworthy conclusion. */
+export function shouldShowAgeGuidance(
+  resultState: ResultState,
+  ageGuidance: string | null,
+): boolean {
+  if (!ageGuidance) return false;
+  return resultState === "warnings" || resultState === "clear_confident";
+}
 
 export const DISCLAIMER =
   "Guide based on public metadata — not a substitute for your judgment. Not a full-text read of the book.";

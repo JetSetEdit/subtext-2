@@ -58,7 +58,7 @@ export default function TransparencyPage() {
         <p className="text-slate-600 dark:text-slate-300">
           <strong>Quick</strong> uses publisher metadata only. It is faster but
           relies on thinner evidence — a missing or vague description may produce
-          a &quot;Limited information&quot; result rather than an all-clear.
+          a &quot;Not enough to be sure&quot; result rather than an all-clear.
         </p>
         <p className="text-slate-600 dark:text-slate-300">
           <strong>Deep</strong> adds allowlisted third-party review snippets. It
