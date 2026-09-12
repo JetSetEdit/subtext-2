@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Subtext 2.0 MVP
 
-## Getting Started
+Ground-up rebuild of [Subtext](https://subtextscanner.com.au) for Jet Set Edit. **Trust > features.**
 
-First, run the development server:
+ISBN → honest content-advisory result for Australian parents. Not a port of v1 (`book-scanner-app`).
+
+## Quick start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy `.env.example` to `.env.local`:
 
-## Learn More
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OPENAI_API_KEY` | No | Enables AI analysis. Without it, keyword heuristics run on metadata (conservative — never implies high confidence). |
+| `OPENAI_MODEL` | No | Default `gpt-4o-mini` |
+| `FORCE_ANALYSIS_FAILURE` | No | Set `true` to test failure paths |
 
-To learn more about Next.js, take a look at the following resources:
+## What this MVP does
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **`/`** — Value prop + Start scan CTA
+- **`/scan`** — ISBN input, Quick/Deep toggle, barcode stub
+- **`/book/[isbn]`** — Cover, title, result state, warnings
+- **`/transparency`** — How it works, states, limitations
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Result states (only four — no "Comfort Read")
 
-## Deploy on Vercel
+| State | Meaning |
+|-------|---------|
+| `warnings` | One or more content advisories |
+| `clear_confident` | Successful analysis + adequate input (≥200 chars) + explicit empty warning set |
+| `low_confidence` | Ran, but thin input or weak evidence |
+| `could_not_analyze` | Pipeline failed, rate-limited, or no usable input |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Conservative defaults:** errors and thin metadata never produce `clear_confident`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Pipeline
+
+1. Fetch metadata (Google Books + Open Library)
+2. Deep mode: optional enrichment from allowlisted domains (Common Sense Media, Kirkus, StoryGraph)
+3. Analyze via OpenAI (or keyword heuristics without API key)
+4. Map to fixed taxonomy subset: violence, sexual content, abuse, self-harm/suicide, substance, discrimination, language
+5. Severity floor: evidence containing rape/suicide/abuse/torture → at least `severe`
+
+### Storage
+
+**In-memory cache** with 24h TTL (`lib/cache/memory.ts`). Resets on server restart / Vercel cold start. Documented choice for MVP — swap for Supabase when env is trivial.
+
+## Testing trust rules
+
+```bash
+npm test
+```
+
+Tests cover:
+
+- Result state machine (`tests/result-state.test.ts`)
+- Severity floor (`tests/severity.test.ts`)
+- Error ≠ clear, thin input ≠ clear, dark synopsis → warnings (`tests/pipeline-trust.test.ts`)
+
+### Manual failure test
+
+- ISBN `0000000000000` forces `could_not_analyze`
+- Or set `FORCE_ANALYSIS_FAILURE=true`
+
+### Known v1 failure (reference)
+
+ISBN `9780593804216` (Yesteryear) showed "Comfort Read" despite dark synopsis in v1. Subtext 2.0 must never show cozy/safe empty states.
+
+## What this MVP is NOT
+
+- Full v1 taxonomy, themes, VIP, paywall, affiliate, community
+- Bookshelf, flip cards, BookTok chrome
+- Full barcode camera (stub only)
+- Legal ACB equivalence
+- Full-text book reading
+
+## Deploy
+
+Vercel-ready. Set env vars in dashboard. No secrets in repo.
+
+## Trust model (commit/PR summary)
+
+1. **No false safety** — four honest states; no Comfort Read badge
+2. **`clear_confident` is gated** — requires pipeline success + adequate input + explicit empty set
+3. **Errors fail closed** — timeouts/rate limits → `could_not_analyze`
+4. **Disclaimer on every page** — metadata guide, not substitute for judgment
+5. **Quick vs Deep labeled honestly** — Quick is thinner/faster, not definitive
+
+When ambiguous, we choose the more conservative trust behaviour.
