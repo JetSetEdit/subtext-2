@@ -29,10 +29,14 @@ function stripHtml(text: string): string {
 
 async function fetchGoogleBooks(isbn: string): Promise<Partial<BookMetadata>> {
   try {
-    const res = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`,
-      { next: { revalidate: 3600 } }
-    );
+    const url = new URL("https://www.googleapis.com/books/v1/volumes");
+    url.searchParams.set("q", `isbn:${isbn}`);
+    const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+    if (apiKey) {
+      url.searchParams.set("key", apiKey);
+    }
+
+    const res = await fetch(url.toString(), { next: { revalidate: 3600 } });
     if (!res.ok) return {};
     const data = (await res.json()) as { items?: GoogleVolume[] };
     const item = data.items?.[0]?.volumeInfo;
