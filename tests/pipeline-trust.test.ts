@@ -27,6 +27,24 @@ describe("trust rules: error ≠ clear", () => {
     expect(result.resultState).not.toBe("clear_confident");
   });
 
+  it("zero metadata produces could_not_analyze", async () => {
+    const metadata: BookMetadata = {
+      isbn: "9780000000000",
+      title: null,
+      author: null,
+      description: null,
+      coverUrl: null,
+      categories: [],
+      enrichmentText: null,
+      inputCharCount: 0,
+    };
+
+    const result = await runPipelineWithMetadata({ metadata, mode: "quick" });
+
+    expect(result.resultState).toBe("could_not_analyze");
+    expect(result.resultState).not.toBe("clear_confident");
+  });
+
   it("thin description never produces clear_confident", async () => {
     const metadata: BookMetadata = {
       isbn: "9780000000000",

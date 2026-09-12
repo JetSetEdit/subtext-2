@@ -38,6 +38,23 @@ export async function runPipeline(
     }
   }
 
+  const hasUsableInput =
+    metadata.inputCharCount > 0 || Boolean(metadata.title?.trim());
+
+  if (!hasUsableInput && !forceFailure) {
+    return {
+      resultState: "could_not_analyze",
+      warnings: [],
+      ageGuidance: null,
+      metadata,
+      analysisMode: mode,
+      pipelineSuccess: false,
+      inputAdequate: false,
+      explicitEmptySet: false,
+      errorMessage: "No book metadata found for this ISBN",
+    };
+  }
+
   const inputAdequate = isInputAdequate(metadata.inputCharCount);
 
   const analysis = await analyzeBook(metadata, mode, { forceFailure });
@@ -66,6 +83,24 @@ export async function runPipelineWithMetadata(
   input: PipelineInput
 ): Promise<PipelineOutput> {
   const { metadata, mode, forceFailure } = input;
+
+  const hasUsableInput =
+    metadata.inputCharCount > 0 || Boolean(metadata.title?.trim());
+
+  if (!hasUsableInput && !forceFailure) {
+    return {
+      resultState: "could_not_analyze",
+      warnings: [],
+      ageGuidance: null,
+      metadata,
+      analysisMode: mode,
+      pipelineSuccess: false,
+      inputAdequate: false,
+      explicitEmptySet: false,
+      errorMessage: "No usable input",
+    };
+  }
+
   const inputAdequate = isInputAdequate(metadata.inputCharCount);
 
   const analysis = await analyzeBook(metadata, mode, { forceFailure });
